@@ -1,62 +1,60 @@
-version: '3.8'
+version: '3.8' # Предупреждение говорит, что это поле устарело, но его можно оставить для совместимости
 
 services:
-  # Сервис приложения NestJS
+  # Сервис приложения NestJS (для разработки)
   app:
-    build: # Используем Dockerfile из текущей директории
+    build:
       context: .
       dockerfile: Dockerfile
-    container_name: medium_clone_app
-    # Обязательно указываем порт, который ваш NestJS-сервер слушает (по умолчанию 3000)
+      target: dev # <-- Указываем целевой образ для сборки
+    container_name: medium_clone_app_dev
     ports:
-      - '3000:3000' # Хост:Контейнер
-    # Устанавливаем зависимости окружения, например, для подключения к БД
+      - '3000:3000'
     environment:
       - DATABASE_URL=postgresql://medium_user:medium_password@db:5432/medium_clone_db
-      # Добавьте другие переменные окружения, если они используются
-      # - PORT=3000
-    # Указываем, что этот сервис зависит от сервиса БД, чтобы дождаться его запуска
+      # Убедитесь, что PORT (если используется в коде) установлен
+      - PORT=3000
     depends_on:
       - db
-    # Опционально: монтируем том для логов или других данных
-    # volumes:
-    #   - ./logs:/app/logs
+    # Монтируем исходный код из хоста в контейнер
+    volumes:
+      - ./src:/app/src # <-- Монтируем папку src
+      - ./package.json:/app/package.json # <-- Опционально: монтируем package.json
+      - ./tsconfig.json:/app/tsconfig.json # <-- Опционально: монтируем tsconfig.json
+      # Может потребоваться монтировать и другие файлы конфигурации, если Nest их читает
+      # - ./.env:/app/.env
+    # Указываем команду, если хотите переопределить CMD из Dockerfile
+    # command: npm run start:dev
 
   # Сервис PostgreSQL
   db:
-    image: postgres:16-alpine # Используем официальный образ PostgreSQL
+    image: postgres:16-alpine
     container_name: medium_clone_postgres
-    restart: always # Перезапускать контейнер при падении
+    restart: always
     environment:
-      # Устанавливаем переменные окружения для создания БД и пользователя
       POSTGRES_DB: medium_clone_db
       POSTGRES_USER: medium_user
       POSTGRES_PASSWORD: medium_password
     ports:
-      - '5432:5432' # Открываем порт БД наружу (опционально, нужно для отладки/IDE)
+      - '5432:5432'
     volumes:
-      # Монтируем именованный том для постоянного хранения данных БД
       - postgres_data:/var/lib/postgresql/data
-      # Опционально: можно смонтировать файл инициализации (например, dump.sql)
-      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
-  # Сервис для визуального редактирования БД (pgAdmin)
+  # Сервис pgAdmin
   pgadmin:
-    image: dpage/pgadmin4:latest # Используем официальный образ pgAdmin
+    image: dpage/pgadmin4:latest
     container_name: medium_clone_pgadmin
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin_password
     ports:
-      - '5050:80' # Порт pgAdmin доступен на localhost:5050
+      - '5050:80'
     volumes:
-      # Монтируем том для сохранения настроек pgAdmin
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
-      - db # Ждем запуска БД перед запуском pgAdmin
+      - db
 
-# Определяем именованные тома для постоянного хранения данных
 volumes:
   postgres_data:
   pgadmin_data:
