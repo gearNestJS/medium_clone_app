@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Сервис приложения NestJS
+  app:
+    build: # Используем Dockerfile из текущей директории
+      context: .
+      dockerfile: Dockerfile
+    container_name: medium_clone_app
+    # Обязательно указываем порт, который ваш NestJS-сервер слушает (по умолчанию 3000)
+    ports:
+      - '3000:3000' # Хост:Контейнер
+    # Устанавливаем зависимости окружения, например, для подключения к БД
+    environment:
+      - DATABASE_URL=postgresql://medium_user:medium_password@db:5432/medium_clone_db
+      # Добавьте другие переменные окружения, если они используются
+      # - PORT=3000
+    # Указываем, что этот сервис зависит от сервиса БД, чтобы дождаться его запуска
+    depends_on:
+      - db
+    # Опционально: монтируем том для логов или других данных
+    # volumes:
+    #   - ./logs:/app/logs
+
+  # Сервис PostgreSQL
+  db:
+    image: postgres:16-alpine # Используем официальный образ PostgreSQL
+    container_name: medium_clone_postgres
+    restart: always # Перезапускать контейнер при падении
+    environment:
+      # Устанавливаем переменные окружения для создания БД и пользователя
+      POSTGRES_DB: medium_clone_db
+      POSTGRES_USER: medium_user
+      POSTGRES_PASSWORD: medium_password
+    ports:
+      - '5432:5432' # Открываем порт БД наружу (опционально, нужно для отладки/IDE)
+    volumes:
+      # Монтируем именованный том для постоянного хранения данных БД
+      - postgres_data:/var/lib/postgresql/data
+      # Опционально: можно смонтировать файл инициализации (например, dump.sql)
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # Сервис для визуального редактирования БД (pgAdmin)
+  pgadmin:
+    image: dpage/pgadmin4:latest # Используем официальный образ pgAdmin
+    container_name: medium_clone_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin_password
+    ports:
+      - '5050:80' # Порт pgAdmin доступен на localhost:5050
+    volumes:
+      # Монтируем том для сохранения настроек pgAdmin
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db # Ждем запуска БД перед запуском pgAdmin
+
+# Определяем именованные тома для постоянного хранения данных
+volumes:
+  postgres_data:
+  pgadmin_data:
