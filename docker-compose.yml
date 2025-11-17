@@ -1,32 +1,31 @@
-version: '3.8' # Предупреждение говорит, что это поле устарело, но его можно оставить для совместимости
-
 services:
-  # Сервис приложения NestJS (для разработки)
   app:
     build:
       context: .
       dockerfile: Dockerfile
-      target: dev # <-- Указываем целевой образ для сборки
+      target: dev
     container_name: medium_clone_app_dev
     ports:
       - '3000:3000'
     environment:
+      # Обратите внимание, что TypeORM получает переменные из .env, но Docker Compose может их переопределять.
+      # Лучше явно передавать их, если вы не используете специальную библиотеку для .env в Docker Compose.
+      # Но в данном случае, TypeORM читает .env внутри контейнера, так что это нормально.
+      # Главное, чтобы .env был скопирован в контейнер (уже есть в COPY . .).
       - DATABASE_URL=postgresql://medium_user:medium_password@db:5432/medium_clone_db
-      # Убедитесь, что PORT (если используется в коде) установлен
       - PORT=3000
     depends_on:
-      - db
-    # Монтируем исходный код из хоста в контейнер
+      db:
+        condition: service_healthy
     volumes:
-      - ./src:/app/src # <-- Монтируем папку src
-      - ./package.json:/app/package.json # <-- Опционально: монтируем package.json
-      - ./tsconfig.json:/app/tsconfig.json # <-- Опционально: монтируем tsconfig.json
-      # Может потребоваться монтировать и другие файлы конфигурации, если Nest их читает
-      # - ./.env:/app/.env
-    # Указываем команду, если хотите переопределить CMD из Dockerfile
-    # command: npm run start:dev
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./.env:/app/.env # <--- Добавляем монтирование .env, чтобы NestJS мог его прочитать
+      - ./node_modules:/app/node_modules # Продолжаем монтировать для живой разработки
+    # Команда запускает приложение NestJS. TypeORM сам позаботится о синхронизации при synchronize: true
+    command: npm run start:dev
 
-  # Сервис PostgreSQL
   db:
     image: postgres:16-alpine
     container_name: medium_clone_postgres
@@ -39,8 +38,13 @@ services:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U medium_user -d medium_clone_db']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  # Сервис pgAdmin
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: medium_clone_pgadmin
