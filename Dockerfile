@@ -1,42 +1,34 @@
 # --- Образ для разработки ---
-# Используем официальный образ Node.js
 FROM node:20-alpine AS dev
-
-# Устанавливаем рабочую директорию в контейнере
 WORKDIR /app
-
-# Копируем файлы зависимостей
 COPY package*.json ./
-
-# Устанавливаем зависимости (включая devDependencies, т.к. нужен TypeScript, Nest CLI и т.д. для --watch)
 RUN npm install
 
-# Копируем остальной исходный код *временно* для установки зависимостей
-# (иногда глубокая структура файлов может потребоваться для разрешения локальных ссылок в tsconfig)
+# Копируем папку prisma в контейнер. Это необходимо для того, чтобы npx prisma generate мог найти вашу схему.
+COPY prisma ./prisma
 COPY . .
 
-# Удаляем скомпилированный код, если он был скопирован, он не нужен в dev-образе
+# Эта команда генерирует клиент Prisma на основе вашей schema.prisma.
+# Клиент Prisma будет включен в node_modules и скомпилирован вместе с остальным кодом.
+RUN npx prisma generate
+
 RUN rm -rf dist
 
-# Указываем команду по умолчанию для запуска приложения в режиме разработки
-# nest start --watch автоматически перезапускает сервер при изменениях
 CMD ["npm", "run", "start:dev"]
-# Или, если у вас нет скрипта start:dev, можно использовать:
-# CMD ["npx", "nest", "start", "--watch"]
-
 
 # --- Образ для продакшена ---
 FROM node:20-alpine AS prod
-
-# Устанавливаем рабочую директорию
 WORKDIR /app
-
-# Копируем зависимости из builder-образа (в реальном мире это может быть тот же образ, что и dev, но с prod зависимостями)
-# Для простоты, установим все зависимости и скомпилируем тут же
 COPY package*.json ./
-RUN npm install --production && npm cache clean --force
-COPY . .
-RUN npm run build
 
-# Указываем команду по умолчанию для запуска скомпилированного приложения
+# Устанавливаем только продакшн зависимости
+RUN npm install --production && npm cache clean --force
+
+# Копируем схему Prisma
+COPY prisma ./prisma
+COPY . .
+
+# Генерируем клиент Prisma
+RUN npx prisma generate
+RUN npm run build
 CMD ["node", "dist/main.js"]
