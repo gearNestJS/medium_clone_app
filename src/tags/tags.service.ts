@@ -11,11 +11,6 @@ export class TagsService {
   ) {}
 
   async findAll(): Promise<Tag[]> {
-    return this.tagsRepository.find();
-  }
-
-  async create(name: string): Promise<Tag> {
-    const tag = this.tagsRepository.create({ name });
-    return this.tagsRepository.save(tag);
+    return await this.tagsRepository.find();
   }
 }
