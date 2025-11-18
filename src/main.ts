@@ -4,8 +4,8 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const host = '0.0.0.0'; // <-- для доступа извне контейнера
-  const portStr = process.env.PORT ?? '3000'; // <-- Безопасное получение строки
+  const host = '0.0.0.0';
+  const portStr = process.env.PORT ?? '3000';
   const port = parseInt(portStr, 10);
 
   if (isNaN(port)) {

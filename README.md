@@ -2,10 +2,20 @@
 
 ### Migrations
 
-```bash
-npx typeorm-ts-node-commonjs migration:generate ./src/migrations/RenameTagNameToTagText -d ./ormconfig-cli.ts
-```
+Создать миграцию для новой сущности - например, User:
 
 ```bash
-npx typeorm-ts-node-commonjs migration:run -d ./ormconfig-cli.ts
+npm run migration:generate --name=CreateUsersTable
+```
+
+Применить все миграции к базе данных:
+
+```bash
+npm run migration:run
+```
+
+Откатить последнюю миграцию:
+
+```bash
+npm run migration:revert
 ```
