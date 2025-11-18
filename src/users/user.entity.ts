@@ -6,8 +6,17 @@ export class User {
   id: number;
 
   @Column()
-  name: string;
+  username: string;
 
   @Column({ unique: true })
   email: string;
+
+  @Column()
+  password: string;
+
+  @Column({ default: '' })
+  bio: string;
+
+  @Column({ default: '' })
+  image: string;
 }
