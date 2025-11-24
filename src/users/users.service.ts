@@ -74,4 +74,18 @@ export class UsersService {
 
     return findUser;
   }
+
+  /** Get user by id */
+  async getUser(id: number): Promise<UserEntity> {
+    const user = await this.userRepository.findOneBy({ id });
+
+    if (!user) {
+      throw new HttpException(
+        `User with id ${id} is not exists`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return user;
+  }
 }
