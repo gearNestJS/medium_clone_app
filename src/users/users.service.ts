@@ -3,6 +3,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './user.entity';
 import { Repository } from 'typeorm';
+import { AuthUserDto } from './dto/auth-user.dto';
+import { compare } from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -10,6 +12,7 @@ export class UsersService {
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
   ) {}
+
   async createUser(createUserDto: CreateUserDto): Promise<UserEntity> {
     const { email, username } = createUserDto;
 
@@ -41,5 +44,34 @@ export class UsersService {
 
     const newUser = this.userRepository.create(createUserDto);
     return await this.userRepository.save(newUser);
+  }
+
+  /** Auth user */
+  async authUser(authUserDto: AuthUserDto): Promise<UserEntity> {
+    const { email, password } = authUserDto;
+
+    const findUser = await this.userRepository.findOneBy({ email });
+
+    if (!findUser) {
+      throw new HttpException(
+        `User with email ${email} is not exists`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const isPasswordEqual = (await compare(
+      password,
+      findUser.password,
+    )) as boolean;
+
+    if (!isPasswordEqual) {
+      throw new HttpException(
+        `User with password ${password} is not exists`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return findUser;
   }
 }
