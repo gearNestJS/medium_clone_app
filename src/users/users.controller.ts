@@ -5,6 +5,8 @@ import {
   HttpException,
   HttpStatus,
   Post,
+  Req,
+  UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -13,8 +15,10 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { userMapper } from 'src/mappers/user.mapper';
 import type { UserResponseInterface } from './interfaces/user-response.interface';
 import { AuthUserDto } from './dto/auth-user.dto';
-import { UserEntity } from './user.entity';
+import type { UserRequestInterface } from 'src/types/express-request.interface';
+import { AuthGuard } from './guards/auth.guard';
 import { User } from './decorators/user.decorator';
+import { UserEntity } from './user.entity';
 
 @Controller()
 export class UsersController {
@@ -41,6 +45,7 @@ export class UsersController {
   }
 
   @Get('user')
+  @UseGuards(AuthGuard)
   getCurrentUser(@User() user: UserEntity): UserResponseInterface {
     if (!user) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
