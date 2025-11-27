@@ -1,14 +1,22 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { hash, genSalt } from 'bcrypt';
-import { isHashed } from 'src/utils/is-hashed.util';
+
+// Утилита миграции TypeORM плохо понимает абсолютные пути импортов - лучше всегда использовать относительные пути для таких случаев
+import { isHashed } from '../utils/is-hashed.util';
 
 @Entity({ name: 'users' })
 export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true })
   username: string;
 
   @Column({ unique: true })
@@ -18,6 +26,7 @@ export class UserEntity {
   password: string;
 
   @BeforeInsert()
+  @BeforeUpdate()
   async hashPassword(): Promise<void> {
     // Не хэшируем, если пароль пустой или уже захеширован
     if (this.password.length === 0 || isHashed(this.password)) {

@@ -5,6 +5,7 @@ import { UserEntity } from './user.entity';
 import { Repository } from 'typeorm';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { compare } from 'bcrypt';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -13,14 +14,17 @@ export class UsersService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
+  /** Регистрация пользователя */
   async createUser(createUserDto: CreateUserDto): Promise<UserEntity> {
     const { email, username } = createUserDto;
 
+    // Пытаемся найти пользователя по его email и по его username
     const [existingEmail, existingUsername] = await Promise.all([
       this.userRepository.findOneBy({ email }),
       this.userRepository.findOneBy({ username }),
     ]);
 
+    // Пользователь с таким username и email уже существует
     if (existingUsername && existingEmail) {
       throw new HttpException(
         'Username and Email are already taken',
@@ -28,6 +32,7 @@ export class UsersService {
       );
     }
 
+    // Пользователь с таким email уже существует
     if (existingEmail) {
       throw new HttpException(
         'Email is already taken',
@@ -35,6 +40,7 @@ export class UsersService {
       );
     }
 
+    // Пользователь с таким username уже существует
     if (existingUsername) {
       throw new HttpException(
         'Username is already taken',
@@ -46,7 +52,7 @@ export class UsersService {
     return await this.userRepository.save(newUser);
   }
 
-  /** Auth user */
+  /** Авторизация пользователя */
   async authUser(authUserDto: AuthUserDto): Promise<UserEntity> {
     const { email, password } = authUserDto;
 
@@ -59,11 +65,8 @@ export class UsersService {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    const isPasswordEqual = (await compare(
-      password,
-      findUser.password,
-    )) as boolean;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+    const isPasswordEqual = await compare<boolean>(password, findUser.password);
 
     if (!isPasswordEqual) {
       throw new HttpException(
@@ -75,7 +78,7 @@ export class UsersService {
     return findUser;
   }
 
-  /** Get user by id */
+  /** Получаем пользователя по его id */
   async getUser(id: number): Promise<UserEntity> {
     const user = await this.userRepository.findOneBy({ id });
 
@@ -87,5 +90,19 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async updateUser(
+    id: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserEntity> {
+    // Получаем пользователя, используя существующий метод getUser
+    const user = await this.getUser(id);
+
+    // Объединяем существующие данные пользователя с новыми данными
+    this.userRepository.merge(user, updateUserDto);
+
+    // Сохраняем обновленные данные в базе данных
+    return await this.userRepository.save(user);
   }
 }
