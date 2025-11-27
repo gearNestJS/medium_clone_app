@@ -7,14 +7,16 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { hash, genSalt } from 'bcrypt';
-import { isHashed } from 'src/utils/is-hashed.util';
+
+// Утилита миграции TypeORM плохо понимает абсолютные пути импортов - лучше всегда использовать относительные пути для таких случаев
+import { isHashed } from '../utils/is-hashed.util';
 
 @Entity({ name: 'users' })
 export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true })
   username: string;
 
   @Column({ unique: true })
