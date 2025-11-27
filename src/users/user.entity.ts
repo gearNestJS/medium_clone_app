@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { hash, genSalt } from 'bcrypt';
 import { isHashed } from 'src/utils/is-hashed.util';
 
@@ -18,6 +24,7 @@ export class UserEntity {
   password: string;
 
   @BeforeInsert()
+  @BeforeUpdate()
   async hashPassword(): Promise<void> {
     // Не хэшируем, если пароль пустой или уже захеширован
     if (this.password.length === 0 || isHashed(this.password)) {

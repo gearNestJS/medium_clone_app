@@ -5,7 +5,7 @@ import {
   HttpException,
   HttpStatus,
   Post,
-  Req,
+  Put,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -15,10 +15,10 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { userMapper } from 'src/mappers/user.mapper';
 import type { UserResponseInterface } from './interfaces/user-response.interface';
 import { AuthUserDto } from './dto/auth-user.dto';
-import type { UserRequestInterface } from 'src/types/express-request.interface';
 import { AuthGuard } from './guards/auth.guard';
 import { User } from './decorators/user.decorator';
 import { UserEntity } from './user.entity';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller()
 export class UsersController {
@@ -51,6 +51,20 @@ export class UsersController {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
+    return userMapper(user);
+  }
+
+  @Put('user')
+  @UseGuards(AuthGuard)
+  async updateUser(
+    @User('id') id: number,
+    @Body('user') updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseInterface> {
+    if (!id) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
+
+    const user = await this.usersService.updateUser(id, updateUserDto);
     return userMapper(user);
   }
 }
