@@ -1,0 +1,27 @@
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { CreateArticleDto } from './dto/create-article.dto';
+import { ArticleService } from './article.service';
+import { ArticleResponseInterface } from './interfaces/article-response.interface';
+import { User } from '../users/decorators/user.decorator';
+import { AuthGuard } from '../users/guards/auth.guard';
+import { articleMapper } from '../mappers/article.mapper';
+import { UserEntity } from 'src/users/user.entity';
+
+@Controller('articles')
+export class ArticleController {
+  constructor(private readonly articleService: ArticleService) {}
+
+  @Post()
+  @UseGuards(AuthGuard)
+  async createArticle(
+    @Body('article') createArticleDto: CreateArticleDto,
+    @User() user: UserEntity,
+  ): Promise<ArticleResponseInterface> {
+    const article = await this.articleService.createArticle(
+      user,
+      createArticleDto,
+    );
+
+    return articleMapper(article);
+  }
+}

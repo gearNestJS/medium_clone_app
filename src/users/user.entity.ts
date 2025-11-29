@@ -4,12 +4,14 @@ import {
   BeforeUpdate,
   Column,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { hash, genSalt } from 'bcrypt';
 
 // Утилита миграции TypeORM плохо понимает абсолютные пути импортов - лучше всегда использовать относительные пути для таких случаев
 import { isHashed } from '../utils/is-hashed.util';
+import { ArticleEntity } from '../article/article.entity';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -42,4 +44,7 @@ export class UserEntity {
 
   @Column({ default: '' })
   image: string;
+
+  @OneToMany(() => ArticleEntity, (article) => article.author)
+  articles: ArticleEntity[];
 }
