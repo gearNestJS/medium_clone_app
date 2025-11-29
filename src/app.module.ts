@@ -10,11 +10,17 @@ import { UsersModule } from './users/users.module';
 import * as dotenv from 'dotenv';
 import ormConfig from 'ormconfig';
 import { AuthMiddleware } from './users/middlewares/auth.middleware';
+import { ArticleModule } from './article/article.module';
 
 dotenv.config();
 
 @Module({
-  imports: [TypeOrmModule.forRoot(ormConfig), TagsModule, UsersModule],
+  imports: [
+    TypeOrmModule.forRoot(ormConfig),
+    TagsModule,
+    UsersModule,
+    ArticleModule,
+  ],
   controllers: [],
   providers: [],
 })
