@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { generateSlug } from 'src/utils/generate-slug.util';
 import { UserEntity } from 'src/users/user.entity';
+import { DeleteResult } from 'typeorm/browser';
 
 @Injectable()
 export class ArticleService {
@@ -42,5 +43,21 @@ export class ArticleService {
     }
 
     return article;
+  }
+
+  async deleteArticle(
+    slug: string,
+    currentUserId: number,
+  ): Promise<DeleteResult> {
+    const article = await this.getArticle(slug);
+
+    if (article.author.id !== currentUserId) {
+      throw new HttpException(
+        'You are not the author of the article',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    return await this.articleRepository.delete({ slug });
   }
 }
