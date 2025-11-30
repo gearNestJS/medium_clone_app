@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { ArticleEntity } from './article.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -29,5 +29,18 @@ export class ArticleService {
     newArticle.author = user;
 
     return await this.articleRepository.save(newArticle);
+  }
+
+  async getArticle(slug: string): Promise<ArticleEntity> {
+    const article = await this.articleRepository.findOneBy({ slug });
+
+    if (!article) {
+      throw new HttpException(
+        `Article with slug '${slug}' not found`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return article;
   }
 }
