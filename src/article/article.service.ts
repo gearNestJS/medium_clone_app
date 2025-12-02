@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { generateSlug } from 'src/utils/generate-slug.util';
 import { UserEntity } from 'src/users/user.entity';
 import { DeleteResult } from 'typeorm/browser';
+import { UpdateArticleDto } from './dto/update-article.dto';
 
 @Injectable()
 export class ArticleService {
@@ -49,6 +50,23 @@ export class ArticleService {
     slug: string,
     currentUserId: number,
   ): Promise<DeleteResult> {
+    const { id } = (await this.getArticle(slug)).author;
+
+    if (id !== currentUserId) {
+      throw new HttpException(
+        'You are not the author of the article',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    return await this.articleRepository.delete({ slug });
+  }
+
+  async updateArticle(
+    updateArticleDto: UpdateArticleDto,
+    slug: string,
+    currentUserId: number,
+  ): Promise<ArticleEntity> {
     const article = await this.getArticle(slug);
 
     if (article.author.id !== currentUserId) {
@@ -58,6 +76,12 @@ export class ArticleService {
       );
     }
 
-    return await this.articleRepository.delete({ slug });
+    if (updateArticleDto.title) {
+      article.slug = generateSlug(updateArticleDto.title);
+    }
+
+    Object.assign(article, updateArticleDto);
+
+    return await this.articleRepository.save(article);
   }
 }
