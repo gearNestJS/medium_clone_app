@@ -7,6 +7,8 @@ import { generateSlug } from 'src/utils/generate-slug.util';
 import { UserEntity } from 'src/users/user.entity';
 import { DeleteResult } from 'typeorm/browser';
 import { UpdateArticleDto } from './dto/update-article.dto';
+import { ArticlesResponseInterface } from './interfaces/articles-response.interface';
+import { ListArticlesQueryDto } from './dto/list-articles-query.dto';
 
 @Injectable()
 export class ArticleService {
@@ -83,5 +85,45 @@ export class ArticleService {
     Object.assign(article, updateArticleDto);
 
     return await this.articleRepository.save(article);
+  }
+
+  async listArticles(
+    currentUserId: number,
+    query: ListArticlesQueryDto,
+  ): Promise<ArticlesResponseInterface> {
+    const { author, limit, offset, tag } = query;
+    const queryBuilder = this.articleRepository.createQueryBuilder('articles');
+
+    queryBuilder.leftJoinAndSelect('articles.author', 'author');
+
+    // Фильтрация по автору
+    // Таблица users (с псевдонимом author) уже присоединена к запросу.
+    // Мы можем просто добавить условие WHERE для этой присоединенной таблицы
+    if (author) {
+      queryBuilder.andWhere('author.username = :username', {
+        username: author,
+      });
+    }
+
+    // Фильтрация по тегу
+    if (tag) {
+      // tagList - это массив строк
+      // :tag = ANY(articles.tagList) - это PostgreSQL-синтаксис для проверки наличия элемента в массиве
+      queryBuilder.andWhere(':tag = ANY(articles.tagList)', { tag });
+    }
+
+    // Пагинация
+    // Разработчики TypeORM официально рекомендуют использовать .take() и .skip() для пагинации.
+    // Внутренне они все равно вызывают .limit() и .offset(), но предоставляют более удобный и безопасный API для разработчика.
+    // Особенно это актуально при использовании getManyAndCount(), где эта пара методов работает предсказуемо.
+    queryBuilder.take(limit ?? 10);
+    queryBuilder.skip(offset ?? 0);
+
+    // Сортировка по дате создания, новые первые
+    queryBuilder.orderBy('articles.createdAt', 'DESC');
+
+    const [articles, articlesCount] = await queryBuilder.getManyAndCount();
+
+    return { articles, articlesCount };
   }
 }
