@@ -98,4 +98,18 @@ export class ArticleController {
 
     return articleMapper(article);
   }
+
+  @Delete(':slug/favorite')
+  @UseGuards(AuthGuard)
+  async unfavoriteArticle(
+    @Param('slug') slug: string,
+    @User('id') currentUserId: number,
+  ): Promise<ArticleResponseInterface> {
+    const article = await this.articleService.unfavoriteArticle(
+      slug,
+      currentUserId,
+    );
+
+    return articleMapper(article);
+  }
 }

@@ -144,7 +144,7 @@ export class ArticleService {
       );
     }
 
-    // Добавляем статью в избранное пользователя, если она еще не добавлена
+    // Ищем статью в списке залайканных статей
     const alreadyFavorited = user?.favorites.some(
       (fav) => fav.id === article.id,
     );
@@ -152,6 +152,35 @@ export class ArticleService {
     if (!alreadyFavorited) {
       user?.favorites.push(article);
       article.favoritesCount += 1;
+
+      await this.userRepository.save(user);
+      await this.articleRepository.save(article);
+    }
+
+    return article;
+  }
+
+  async unfavoriteArticle(slug: string, id: number): Promise<ArticleEntity> {
+    const article = await this.getArticle(slug);
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['favorites'],
+    });
+
+    // Проверяем, что пользователь существует
+    if (!user) {
+      throw new HttpException(
+        `User with id '${id}' not found`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // Ищем статью в списке залайканных статей
+    const index = user?.favorites.findIndex((fav) => fav.id === article.id);
+
+    if (index >= 0) {
+      user.favorites.splice(index, 1);
+      article.favoritesCount -= 1;
 
       await this.userRepository.save(user);
       await this.articleRepository.save(article);
