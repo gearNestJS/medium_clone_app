@@ -4,6 +4,8 @@ import {
   BeforeUpdate,
   Column,
   Entity,
+  JoinTable,
+  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -27,6 +29,19 @@ export class UserEntity {
   @Column()
   password: string;
 
+  @Column({ default: '' })
+  bio: string;
+
+  @Column({ default: '' })
+  image: string;
+
+  @OneToMany(() => ArticleEntity, (article) => article.author)
+  articles: ArticleEntity[];
+
+  @ManyToMany(() => ArticleEntity)
+  @JoinTable()
+  favorites: ArticleEntity[];
+
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword(): Promise<void> {
@@ -38,13 +53,4 @@ export class UserEntity {
     const salt = await genSalt(13);
     this.password = await hash(this.password, salt);
   }
-
-  @Column({ default: '' })
-  bio: string;
-
-  @Column({ default: '' })
-  image: string;
-
-  @OneToMany(() => ArticleEntity, (article) => article.author)
-  articles: ArticleEntity[];
 }

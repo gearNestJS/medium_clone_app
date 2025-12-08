@@ -15,6 +15,8 @@ export class ArticleService {
   constructor(
     @InjectRepository(ArticleEntity)
     private readonly articleRepository: Repository<ArticleEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
   ) {}
 
   async createArticle(
@@ -125,5 +127,36 @@ export class ArticleService {
     const [articles, articlesCount] = await queryBuilder.getManyAndCount();
 
     return { articles, articlesCount };
+  }
+
+  async favoriteArticle(slug: string, id: number): Promise<ArticleEntity> {
+    const article = await this.getArticle(slug);
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['favorites'],
+    });
+
+    // Проверяем, что пользователь существует
+    if (!user) {
+      throw new HttpException(
+        `User with id '${id}' not found`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // Добавляем статью в избранное пользователя, если она еще не добавлена
+    const alreadyFavorited = user?.favorites.some(
+      (fav) => fav.id === article.id,
+    );
+
+    if (!alreadyFavorited) {
+      user?.favorites.push(article);
+      article.favoritesCount += 1;
+
+      await this.userRepository.save(user);
+      await this.articleRepository.save(article);
+    }
+
+    return article;
   }
 }

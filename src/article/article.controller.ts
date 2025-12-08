@@ -27,6 +27,7 @@ export class ArticleController {
   constructor(private readonly articleService: ArticleService) {}
 
   @Get()
+  @UsePipes(new ValidationPipe())
   async listArticles(
     @User('id') currentUserId: number,
     @Query() query: ListArticlesQueryDto,
@@ -77,6 +78,20 @@ export class ArticleController {
   ): Promise<ArticleResponseInterface> {
     const article = await this.articleService.updateArticle(
       updateArticleDto,
+      slug,
+      currentUserId,
+    );
+
+    return articleMapper(article);
+  }
+
+  @Post(':slug/favorite')
+  @UseGuards(AuthGuard)
+  async favoriteArticle(
+    @Param('slug') slug: string,
+    @User('id') currentUserId: number,
+  ): Promise<ArticleResponseInterface> {
+    const article = await this.articleService.favoriteArticle(
       slug,
       currentUserId,
     );
