@@ -27,6 +27,7 @@ export class ArticleController {
   constructor(private readonly articleService: ArticleService) {}
 
   @Get()
+  @UsePipes(new ValidationPipe())
   async listArticles(
     @User('id') currentUserId: number,
     @Query() query: ListArticlesQueryDto,
