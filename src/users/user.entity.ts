@@ -29,18 +29,6 @@ export class UserEntity {
   @Column()
   password: string;
 
-  @BeforeInsert()
-  @BeforeUpdate()
-  async hashPassword(): Promise<void> {
-    // Не хэшируем, если пароль пустой или уже захеширован
-    if (this.password.length === 0 || isHashed(this.password)) {
-      return;
-    }
-
-    const salt = await genSalt(13);
-    this.password = await hash(this.password, salt);
-  }
-
   @Column({ default: '' })
   bio: string;
 
@@ -53,4 +41,16 @@ export class UserEntity {
   @ManyToMany(() => ArticleEntity)
   @JoinTable()
   favorites: ArticleEntity[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword(): Promise<void> {
+    // Не хэшируем, если пароль пустой или уже захеширован
+    if (this.password.length === 0 || isHashed(this.password)) {
+      return;
+    }
+
+    const salt = await genSalt(13);
+    this.password = await hash(this.password, salt);
+  }
 }

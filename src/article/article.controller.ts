@@ -84,4 +84,18 @@ export class ArticleController {
 
     return articleMapper(article);
   }
+
+  @Post(':slug/favorite')
+  @UseGuards(AuthGuard)
+  async favoriteArticle(
+    @Param('slug') slug: string,
+    @User('id') currentUserId: number,
+  ): Promise<ArticleResponseInterface> {
+    const article = await this.articleService.favoriteArticle(
+      slug,
+      currentUserId,
+    );
+
+    return articleMapper(article);
+  }
 }
